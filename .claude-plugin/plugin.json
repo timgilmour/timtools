@@ -1,0 +1,19 @@
+{
+  "name": "timtools",
+  "description": "Project scaffolding, ECS game architecture, and development utilities for Claude Code",
+  "version": "1.0.0",
+  "author": {
+    "name": "Tim Gilmour"
+  },
+  "homepage": "https://github.com/timgilmour/timtools",
+  "repository": "https://github.com/timgilmour/timtools",
+  "license": "MIT",
+  "keywords": [
+    "scaffolding",
+    "project-setup",
+    "ecs",
+    "game-architecture",
+    "utilities",
+    "skills"
+  ]
+}
