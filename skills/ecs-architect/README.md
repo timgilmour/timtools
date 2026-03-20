@@ -1,18 +1,18 @@
 # ecs-architect
 
-A Claude Code skill suite for designing, implementing, and reviewing game systems using **Entity-Component-System (ECS)** architecture. Targets TypeScript/Three.js and Godot/GDScript.
+A Claude Code skill for designing, implementing, and reviewing game systems using **Entity-Component-System (ECS)** architecture. Targets TypeScript/Three.js and Godot/GDScript.
 
-## Skills
+## Usage
 
-| Skill | Trigger | What it does |
-|-------|---------|--------------|
-| **ecs-design** | "Design a feature using ECS", "Architect this system" | Produces a structured design document: components, systems, resources, channels, and pipeline order |
-| **ecs-implement** | "Build the ECS world", "Implement this feature" | Generates working scaffold code from a design — World class, components, systems, pipeline wiring |
-| **ecs-review** | "Review this code for ECS violations", "Audit against ECS principles" | Audits existing code against ECS principles with a severity-ranked checklist (critical/warning/suggestion) |
+Invoke `ecs-architect` — it routes to the appropriate phase based on your request:
+
+| Intent | Resource loaded |
+|--------|----------------|
+| "Design a feature using ECS", "Architect this system" | `ecs-design.md` — structured design document |
+| "Build the ECS world", "Implement this feature" | `ecs-implement.md` — working scaffold code |
+| "Review this code for ECS violations" | `ecs-review.md` — severity-ranked audit |
 
 ## Core Concepts
-
-The skills enforce these architectural principles (documented in full at `02-Notes/ecs-architect/ecs-architecture-principles.md`):
 
 - **Components** — pure data, no logic. Small, composable structs.
 - **Systems** — all logic lives here. One responsibility per system, stateless by default.
@@ -23,33 +23,24 @@ The skills enforce these architectural principles (documented in full at `02-Not
 ## Intended Workflow
 
 ```
-1. ecs-design    →  Produce a design doc for the feature
-2. ecs-implement →  Scaffold code from the design
-3. ecs-review    →  Audit the result against ECS principles
+1. Design    →  Produce a design doc for the feature
+2. Implement →  Scaffold code from the design
+3. Review    →  Audit the result against ECS principles
 ```
-
-The design skill should always run before implementation. The review skill can be used on any existing codebase, not just code produced by this suite.
 
 ## Language Support
 
-- **TypeScript** — default target. Includes Three.js bridge patterns (`RenderSyncSystem`) and Vite/Astro game loop wiring.
+- **TypeScript** — default target. Includes Three.js bridge patterns and Vite/Astro game loop wiring.
 - **GDScript** — Godot target. Uses autoload World, node-based components, and group-based queries.
 
-## Key Files
+## Files
 
 ```
 ecs-architect/
-  ecs-architecture-principles.md   # Full reference document (all seven ECS concepts)
-  ecs-design/SKILL.md              # Feature design skill
-  ecs-implement/SKILL.md           # Implementation scaffold skill
-  ecs-review/SKILL.md              # Code review/audit skill
+  SKILL.md                        # Main skill entry point (router)
+  README.md                       # This file
+  ecs-architecture-principles.md  # Full reference (all seven ECS concepts)
+  ecs-design.md                   # Feature design resource
+  ecs-implement.md                # Implementation scaffold resource
+  ecs-review.md                   # Code review/audit resource
 ```
-
-## Anti-Patterns the Skills Flag
-
-- Logic in components (move to a system)
-- "Manager" classes mixing state and logic (split into resource + system)
-- Callbacks or event buses between systems (use channels)
-- Implicit execution order (make the pipeline explicit)
-- Deep inheritance hierarchies (compose with components)
-- Systems that do more than one job (split and name each piece)

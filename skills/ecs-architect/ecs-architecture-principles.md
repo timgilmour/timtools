@@ -1,7 +1,5 @@
 # ECS Architecture Principles
 
-Distilled from *Systems: Modular and Scalable Game Architecture for Orthogonal Game Logic* (originally Unreal-focused). All examples rewritten for TypeScript/Three.js and Godot (GDScript).
-
 > Inspired by: Bevy, hecs (Rust), Oxygengine, Rust's lazy-iterator and channel APIs.
 
 ---

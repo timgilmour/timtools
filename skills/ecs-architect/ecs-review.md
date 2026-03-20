@@ -1,4 +1,4 @@
-# Skill: ECS Code Review
+# ECS Code Review
 
 Use this skill when asked to review, audit, or critique existing game code against ECS architecture principles.
 
@@ -8,7 +8,7 @@ Reviews code for violations of ECS principles and produces prioritised, actionab
 
 ## Reference
 
-See `../ecs-architecture-principles.md` for full definitions. The three core laws:
+See `ecs-architecture-principles.md` for full definitions. The three core laws:
 1. **Components = data only** — no logic, no side effects beyond internal state
 2. **Systems = logic only** — small, orthogonal, explicit read/write surface
 3. **Flat and deterministic** — no hidden dependencies, no callback webs, explicit execution order

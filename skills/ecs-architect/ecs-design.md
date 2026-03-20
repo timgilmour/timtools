@@ -1,4 +1,4 @@
-# Skill: ECS Feature Design
+# ECS Feature Design
 
 Use this skill when asked to design, architect, or plan a new game feature, mechanic, or system using ECS (Entity-Component-System) architecture principles.
 
@@ -12,7 +12,7 @@ Guides the design of game features through an ECS lens — producing a structure
 
 ## Reference
 
-See `../ecs-architecture-principles.md` for full principle definitions. Summary:
+See `ecs-architecture-principles.md` for full principle definitions. Summary:
 - **Components** = pure data, no logic
 - **Systems** = logic functions, query the world, no side effects beyond world state
 - **Resources** = scoped globals (config, caches, managers)

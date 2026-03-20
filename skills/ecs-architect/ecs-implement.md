@@ -1,4 +1,4 @@
-# Skill: ECS Implementation
+# ECS Implementation
 
 Use this skill when asked to scaffold, build out, or implement ECS world infrastructure or specific game features using ECS architecture.
 
@@ -11,7 +11,7 @@ Produces working implementation code for:
 
 ## Reference
 
-See `../ecs-architecture-principles.md` for full definitions and examples.
+See `ecs-architecture-principles.md` for full definitions and examples.
 
 ## Language targets
 
@@ -223,7 +223,7 @@ func _process(delta: float) -> void:
 
 ## When asked to implement a specific feature
 
-1. Refer to `ecs-design` skill first — produce or confirm the design before writing code
+1. Refer to `ecs-design.md` first — produce or confirm the design before writing code
 2. Implement components as plain interfaces/classes (TypeScript) or node scripts (Godot)
 3. Implement systems as standalone functions or classes with a single `run` method
 4. Wire it all into a pipeline factory function
