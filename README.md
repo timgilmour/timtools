@@ -73,10 +73,6 @@ The architecture principles document at the heart of the suite defines seven cor
 
 ---
 
-## Contributing
-
-Issues and pull requests are welcome. If you've built a skill that fits the timtools philosophy — opinionated, workflow-driven, designed for real projects — open a PR.
-
 ## License
 
 MIT
