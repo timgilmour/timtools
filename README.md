@@ -4,13 +4,7 @@ Skills and plugins for Claude Code that make development faster and more structu
 
 ## Installation
 
-Install via the Claude Code plugin system:
-
-```bash
-claude plugins install timtools@timgilmour
-```
-
-Or clone and reference locally:
+Clone and reference locally:
 
 ```bash
 git clone https://github.com/timgilmour/timtools.git
@@ -40,7 +34,7 @@ Most Claude Code projects start the same way: initialize git, create a folder st
 
 The skill creates a complete Obsidian vault with 11 numbered directories (Inbox, Plans, Notes, Reference, Tasks, Skills, Code, Config, MCP, Output, Attachments), pre-configured with 21 community plugins for documentation workflows. It generates a `CLAUDE.md` with your project's conventions, an `AGENTS.md` with subagent routing guidance, and a `.claude/settings.local.json` with language-appropriate permissions. It even initializes persistent memory and runs an initial GitNexus index so code intelligence is available from commit one.
 
-Language support covers TypeScript, Python, Go, and Rust out of the box, each with tailored app directory scaffolds and permission configs. The wizard also discovers your installed Claude Code plugins, lets you enable them per-project, and offers to browse the marketplace for plugins that match your project's goals. The result is a workspace where every tool — VS Code, Claude Code, Obsidian, GitNexus — is wired together and ready to use immediately.
+Language support covers TypeScript, Python, Go, and Rust out of the box, each with tailored app directory scaffolds and permission configs. The wizard also discovers your installed Claude Code plugins and lets you enable them per-project. The result is a workspace where every tool — VS Code, Claude Code, Obsidian, GitNexus — is wired together and ready to use immediately.
 
 **Usage:** `/scaffold-project`
 

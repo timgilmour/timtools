@@ -57,27 +57,15 @@ Free text. Store as `GOALS`.
 
 ### Q6: Installed Plugins
 
-Before asking this question, run `claude plugins list` to discover what plugins the user actually has installed. Parse the output and present only the **non-core** plugins (exclude superpowers, claude-mem, mgrep, and tim-tools — these are assumed). Show each plugin's name, marketplace, and enabled/disabled status.
+Before asking this question, run `claude plugins list` to discover what plugins the user actually has installed. Parse the output and present only the **non-core** plugins (exclude superpowers, claude-mem, mgrep, and timtools — these are assumed). Show each plugin's name and enabled/disabled status.
 
 > Here are the plugins installed on your system:
 >
-> {numbered list of discovered plugins with name, marketplace, and current status}
+> {numbered list of discovered plugins with name and current status}
 >
 > Which of these should be enabled for this project? (comma-separated numbers, or "none")
 
 Store as `OPTIONAL_PLUGINS` (list).
-
-### Q7: Marketplace Search
-
-After the user answers Q6, based on what you now know about the project (DELIVERY_METHOD, LANGUAGE, GOALS), suggest 2-3 specific types of plugins that would complement the project but aren't currently installed. Then ask:
-
-> Based on your project goals, you might also benefit from plugins for **{suggestion 1}**, **{suggestion 2}**, etc.
->
-> Would you like to browse the plugin marketplace for additional skills? (yes/no)
-
-If yes, run `claude plugins marketplace list` to show available marketplaces, then help the user install any plugins they want using `claude plugins install <plugin>@<marketplace>`. After installing, add them to `OPTIONAL_PLUGINS`.
-
-If no, move on.
 
 ---
 
