@@ -15,6 +15,7 @@ git clone https://github.com/timgilmour/timtools.git
 ```text
 timtools/
 ├── skills/
+│   ├── camoufox-browser/    # Anti-detect Firefox + Playwright automation
 │   ├── ecs-architect/       # ECS game architecture suite (design, implement, review)
 │   └── scaffold-project/    # Full-stack project scaffolding wizard
 ├── plugins/                 # Plugin manifests and configs
@@ -58,6 +59,26 @@ The architecture principles document at the heart of the suite defines seven cor
 |------------|-----------------------------------|
 | TypeScript | Web, Node, Vite, Astro, Three.js  |
 | GDScript   | Godot 4.x                         |
+
+---
+
+### camoufox-browser
+
+**Install and use Camoufox — a custom anti-detect Firefox build with built-in fingerprint spoofing, human-like cursor motion, geo-matched identity from proxy IPs, and full Playwright API compatibility.**
+
+Modern bot detection systems look beyond user agents and IP addresses — they fingerprint the browser through hundreds of signals: WebGL renderer hashes, installed font lists, screen dimensions, navigator properties, header ordering, mouse motion curves, timing jitter. Running Playwright with stealth plugins still leaks defaults from the underlying Chromium build that don't match the fingerprint you're presenting, which is exactly what detection looks for. Camoufox sidesteps this by patching Firefox at the C++ level so the fingerprint surface itself is configurable, then layers BrowserForge on top to auto-generate realistic OS + browser + hardware combinations that hang together. The `camoufox-browser` skill packages this into a one-command install plus a working scaffold you can build automation on.
+
+The workflow is install → verify → use. The `scripts/install.sh` handles Debian/Ubuntu system deps (libgtk-3-0, libasound2, libx11-xcb1, optionally Xvfb for virtual-display headless), the `camoufox[geoip]` pip package, and the ~1.2 GB browser download in one shot. `scripts/doctor.py` end-to-end verifies the install, including a smoke launch that confirms the fingerprint is being applied. From there, any Playwright Firefox code works by swapping the launcher for `Camoufox(...)` (sync) or `AsyncCamoufox(...)` (async) — no other API changes. Four references cover the surface area: `api.md` for the full `Camoufox()` parameter reference, `cli.md` for `python -m camoufox` commands (fetch, version, path), `stealth.md` for the threat model and what each flag actually fakes, and `examples.md` for cookbook recipes — residential proxies with geo-matched locale, persistent profiles, Cloudflare Turnstile flows, virtual-display headless on Linux servers.
+
+**Usage:** trigger by asking Claude Code to install Camoufox, scrape with anti-bot evasion, set up a stealth or anti-detect browser, bypass Cloudflare Turnstile, configure residential proxies with geo-matched identity, or use Playwright with fingerprint rotation.
+
+**Supported environments:**
+
+| Platform | Notes                                                        |
+|----------|--------------------------------------------------------------|
+| Linux    | Xvfb supported for `headless="virtual"` on headless servers |
+| macOS    | Native run; no virtual display needed                        |
+| Windows  | Native run; no virtual display needed                        |
 
 ---
 
