@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hawker.local/win2lin/manifest.schema.json",
+  "title": "win2lin migration manifest",
+  "type": "object",
+  "required": ["schema_version", "created_at", "source", "projects", "global_claude_subset", "secrets_vault", "toolchain"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "created_at": { "type": "string" },
+    "source": {
+      "type": "object",
+      "required": ["host", "user", "home", "claude_json", "os", "os_version", "arch"],
+      "properties": {
+        "host":         { "type": "string" },
+        "user":         { "type": "string" },
+        "home":         { "type": "string" },
+        "claude_json":  { "type": "string" },
+        "os":           { "type": "string", "enum": ["windows"] },
+        "os_version":   { "type": "string" },
+        "arch":         { "type": "string", "enum": ["x86_64", "aarch64"] }
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "source_path", "policy", "in_repo_claude"],
+        "properties": {
+          "slug":         { "type": "string", "pattern": "^[a-z0-9._-]+$" },
+          "source_path":  { "type": "string" },
+          "policy":       { "type": "string", "enum": ["strict-clean", "capture-state", "bundle-whole-tree", "skip"] },
+          "git": {
+            "type": "object",
+            "properties": {
+              "remote":          { "type": "string" },
+              "default_branch":  { "type": "string" },
+              "captured": {
+                "type": "object",
+                "properties": {
+                  "dirty_patch":  { "type": "string" },
+                  "stashes":      { "type": "string" },
+                  "untracked":    { "type": "string" },
+                  "worktrees":    { "type": "string" }
+                }
+              }
+            }
+          },
+          "in_repo_claude":      { "type": "array", "items": { "type": "string" } },
+          "per_project_memory":  { "type": "string" }
+        }
+      }
+    },
+    "global_claude_subset": {
+      "type": "object",
+      "required": ["skills", "marketplaces", "settings_files"],
+      "properties": {
+        "skills":         { "type": "array", "items": { "type": "string" } },
+        "marketplaces":   { "type": "array", "items": { "type": "string" } },
+        "settings_files": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "secrets_vault": {
+      "type": "object",
+      "required": ["present"],
+      "properties": {
+        "present":    { "type": "boolean" },
+        "categories": { "type": "array", "items": { "type": "string", "enum": ["env", "ssh", "netrc", "npmrc", "gh", "aws", "gpg", "custom"] } },
+        "ciphertext": { "type": "string" }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "properties": {
+        "node":       { "type": "string" },
+        "pnpm":       { "type": "string" },
+        "global_npm": { "type": "array", "items": { "type": "string" } },
+        "gh":         { "type": "string" }
+      }
+    }
+  }
+}
