@@ -66,7 +66,7 @@ Store the seed in the prompt record. If the user clears it, omit `--seed` from t
 Every time a render is produced, create or update the subject's JSON file at:
 `<OUTPUT_DIR>/concepts/[subject-type]/[slug]/[slug].json`
 
-> The generator also writes a plain-text **prompt sidecar** next to every image it saves — `[slug]-NN.txt` containing only the exact prompt — so the user can read it or paste it straight into another LLM without digging through the JSON record.
+> The generator also writes a plain-text **prompt sidecar** next to every image it saves — `[slug]-NN.txt` containing only the exact prompt — so the user can read it or paste it straight into another LLM without digging through the JSON record. It also **corrects the image extension to match the actual bytes** (some models return JPEG even for a `.png` output path) and prints `Image saved to <path>` — record that actual filename in `file`.
 
 The outer object is the subject definition. `renders[]` is the array of generation records.
 

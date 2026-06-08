@@ -491,7 +491,7 @@ async function generateWithNanoBananaPro(
   referenceImage?: string,
   provider: "google" | "vertex" = "google",
   seed?: number
-): Promise<void> {
+): Promise<string> {
   const ai = createGenAIClient(provider);
   const providerLabel = provider === "vertex" ? " via Vertex AI" : "";
 
@@ -531,8 +531,7 @@ async function generateWithNanoBananaPro(
 
   const imageData = extractImageData(response);
   const imageBuffer = Buffer.from(imageData, "base64");
-  await writeFile(output, imageBuffer);
-  console.log(`Image saved to ${output}`);
+  return saveImage(output, imageBuffer);
 }
 
 async function generateWithNanoBanana2(
@@ -545,7 +544,7 @@ async function generateWithNanoBanana2(
   grounded?: boolean,
   provider: "google" | "vertex" = "google",
   seed?: number
-): Promise<void> {
+): Promise<string> {
   const ai = createGenAIClient(provider);
 
   const providerLabel = provider === "vertex" ? " via Vertex AI" : "";
@@ -645,8 +644,7 @@ async function generateWithNanoBanana2(
   }
 
   const imageBuffer = Buffer.from(imageData, "base64");
-  await writeFile(output, imageBuffer);
-  console.log(`Image saved to ${output}`);
+  return saveImage(output, imageBuffer);
 }
 
 // ============================================================================
@@ -660,7 +658,7 @@ async function generateWithOpenRouter(
   aspectRatio: AspectRatio,
   output: string,
   referenceImage?: string
-): Promise<void> {
+): Promise<string> {
   const apiKey = process.env.OPENROUTER_KEY;
   if (!apiKey) {
     throw new CLIError("Missing environment variable: OPENROUTER_KEY");
@@ -752,8 +750,39 @@ async function generateWithOpenRouter(
   }
 
   const imageBuffer = Buffer.from(imageBase64, "base64");
-  await writeFile(output, imageBuffer);
-  console.log(`Image saved to ${output}`);
+  return saveImage(output, imageBuffer);
+}
+
+// ============================================================================
+// Image Saving Helper
+// ============================================================================
+
+// Sniff the real image format from magic bytes so the saved file's extension
+// matches its actual contents (some models return JPEG even for a .png path).
+function detectImageExt(buffer: Buffer): string | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "jpg";
+  if (buffer.length >= 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return "png";
+  if (buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP") return "webp";
+  if (buffer.length >= 3 && buffer.toString("ascii", 0, 3) === "GIF") return "gif";
+  return null;
+}
+
+// Write the image, correcting the extension to match the real bytes. Returns the path written.
+async function saveImage(requestedPath: string, buffer: Buffer): Promise<string> {
+  const detected = detectImageExt(buffer);
+  const norm = (e: string) => (e.toLowerCase() === "jpeg" ? "jpg" : e.toLowerCase());
+  const extMatch = requestedPath.match(/\.([^.\/\\]+)$/);
+  const requestedExt = extMatch ? norm(extMatch[1]) : null;
+  let finalPath = requestedPath;
+  if (detected && requestedExt && requestedExt !== detected) {
+    finalPath = requestedPath.replace(/\.[^.\/\\]+$/, "") + "." + detected;
+    console.warn(`Warning: model returned ${detected.toUpperCase()} but --output was "${requestedPath}"; saving as "${finalPath}" so the extension matches the file contents.`);
+  } else if (detected && !requestedExt) {
+    finalPath = `${requestedPath}.${detected}`;
+  }
+  await writeFile(finalPath, buffer);
+  console.log(`Image saved to ${finalPath}`);
+  return finalPath;
 }
 
 // ============================================================================
@@ -831,18 +860,20 @@ async function main(): Promise<void> {
       console.warn("Warning: --seed is not supported with OpenRouter provider, ignoring");
     }
 
-    const generate = async (prompt: string, output: string): Promise<void> => {
+    const generate = async (prompt: string, output: string): Promise<string> => {
+      let savedPath: string;
       if (provider === "openrouter") {
-        await generateWithOpenRouter(args.model, prompt, args.size, args.aspectRatio, output, args.referenceImage);
+        savedPath = await generateWithOpenRouter(args.model, prompt, args.size, args.aspectRatio, output, args.referenceImage);
       } else if (args.model === "nano-banana-pro") {
-        await generateWithNanoBananaPro(prompt, args.size, args.aspectRatio, output, args.referenceImage, geminiProvider, args.seed);
+        savedPath = await generateWithNanoBananaPro(prompt, args.size, args.aspectRatio, output, args.referenceImage, geminiProvider, args.seed);
       } else {
-        await generateWithNanoBanana2(prompt, args.size, args.aspectRatio, output, args.referenceImage, args.thinking, args.grounded, geminiProvider, args.seed);
+        savedPath = await generateWithNanoBanana2(prompt, args.size, args.aspectRatio, output, args.referenceImage, args.thinking, args.grounded, geminiProvider, args.seed);
       }
       // Write a plain-text prompt sidecar next to the image — copy-paste ready for any LLM.
-      const promptPath = output.replace(/\.(png|jpe?g|webp)$/i, "") + ".txt";
+      const promptPath = savedPath.replace(/\.(png|jpe?g|webp|gif)$/i, "") + ".txt";
       await writeFile(promptPath, prompt + "\n");
       console.log(`Prompt saved to ${promptPath}`);
+      return savedPath;
     };
 
     // Handle creative variations mode
@@ -851,7 +882,7 @@ async function main(): Promise<void> {
       console.log(`Note: CLI mode uses same prompt for all variations (tests model variability)\n`);
 
       const basePath = args.output.replace(/\.png$/, "");
-      const promises: Promise<void>[] = [];
+      const promises: Promise<string>[] = [];
 
       for (let i = 1; i <= args.creativeVariations; i++) {
         const varOutput = `${basePath}-v${i}.png`;
@@ -865,11 +896,11 @@ async function main(): Promise<void> {
     }
 
     // Standard single image generation
-    await generate(finalPrompt, args.output);
+    const savedPath = await generate(finalPrompt, args.output);
 
     // Remove background if requested
     if (args.removeBg) {
-      await removeBackground(args.output);
+      await removeBackground(savedPath);
     }
   } catch (error) {
     handleError(error);
