@@ -1,6 +1,6 @@
 # Ingest Image — Reference → Description + Pose
 
-Turn a reference image into reusable text: a **subject description** (identity, for re-rendering) and a **pose description** (transient, banked into `core/pose-library.md`). The engine can't see — **Claude reads the image** (the Read tool ingests images visually) and derives the text.
+Turn a reference image into reusable text: a **subject description** (identity, for re-rendering) and a **pose description** (transient, banked into the `vocabulary/poses.json` pool). The engine can't see — **Claude reads the image** (the Read tool ingests images visually) and derives the text.
 
 ## When to use
 
@@ -53,29 +53,43 @@ bone-white + ox-blood palette.
 
 > Note: "screaming and enraged" is **deliberately omitted** here — it's transient. It goes to Output 2.
 
-## Output 2 — Pose-library entry
+## Output 2 — Pose entry (for `vocabulary/poses.json`)
 
-In the format `core/pose-library.md` expects (append it under the INGEST line there):
+Emit a pose **object** to append to the `vocabulary/poses.json` pool (confirm with the user first; see `core/pose-library.md` → "Creating a new pose"). Captured poses are almost always `observed` / `mesh_safe: false`. Tag `applies_to` with the subject's body plan (`biped` | `quadruped` | `winged` | `floating`).
 
-```
-### <pose-slug>
-- **phrase:** <body + limbs + head + weight, imperative>
-- **expression:** <face/attitude>
-- **aspect:** <ratio>
-- **use:** action / beauty / idle / dramatic
-- **source:** <image filename>
+```json
+{
+  "id": "<verb-first-slug>",
+  "taxonomy": "pose",
+  "label": "<Readable Name>",
+  "category": "observed",
+  "mesh_safe": false,
+  "applies_to": ["biped"],
+  "phrase": "<body + limbs + head + weight, imperative>",
+  "expression": "<face/attitude>",
+  "aspect": "<ratio>",
+  "use": "action / beauty / idle / dramatic",
+  "source": "<image filename>",
+  "ext": {}
+}
 ```
 
 **Example:**
-```
-### enraged-roar
-- **phrase:** standing wide with weight low, torso leaning forward, both
-  arms raised and bent with fists clenched, shoulders hunched, head
-  tilted back mid-roar
-- **expression:** screaming, enraged, furious
-- **aspect:** 2:3
-- **use:** action / dramatic
-- **source:** orc-ref.png
+```json
+{
+  "id": "enraged-roar",
+  "taxonomy": "pose",
+  "label": "Enraged roar",
+  "category": "observed",
+  "mesh_safe": false,
+  "applies_to": ["biped"],
+  "phrase": "standing wide with weight low, torso leaning forward, both arms raised and bent with fists clenched, shoulders hunched, head tilted back mid-roar",
+  "expression": "screaming, enraged, furious",
+  "aspect": "2:3",
+  "use": "action / dramatic",
+  "source": "orc-ref.png",
+  "ext": {}
+}
 ```
 
 ## Downstream: three routes
@@ -84,19 +98,19 @@ In the format `core/pose-library.md` expects (append it under the INGEST line th
 |------|------|-----------------|--------|
 | **Mesh-gen render of this subject** | force A-pose / T-pose (neutralize) | pass source as `--reference-image` for fidelity | clean isolated model-ready render of the same character |
 | **Faithful posed concept render** | use the captured pose + expression | optional `--reference-image` | a clean-background render that keeps the drama (not for mesh gen) |
-| **Bank the pose only** | — | — | append Output 2 to `core/pose-library.md`; reuse by name later |
+| **Bank the pose only** | — | — | append Output 2 (a pose object) to `vocabulary/poses.json`; reuse by name later |
 
 ### Mesh-gen render command (subject from image, normalized pose)
 
 ```bash
 bun run <ZUUL>/tools/generate-image.ts \
-  --prompt "<render block from core/render-rules.md, <FRAMING> = Front-facing orthographic>. Full-body character concept reference of <Output 1 identity>, <POSE PHRASE>, NEUTRAL expression." \
+  --prompt "<clean-mesh-gen style prompt from vocabulary/styles.json, <FRAMING> = Front-facing orthographic>. Full-body character concept reference of <Output 1 identity>, <POSE PHRASE>, NEUTRAL expression." \
   --reference-image <path/to/source-image> \
   --model nano-banana-2 --size 2K --aspect-ratio 2:3 \
   --output <OUTPUT_DIR>/concepts/<subject-type>/<slug>/<slug>-tpose-01.png
 ```
 
-Substitute `<POSE PHRASE>` with the mesh pose the user asked for, copied from `core/pose-library.md` — A-pose by default, T-pose when the user requests it (e.g. T-pose → *"standing in a symmetrical T-pose with both arms extended straight out horizontally to the sides at shoulder height, palms down, legs shoulder-width apart"*). Use the ingested subject's real `<subject-type>` in the output path (`characters`, `creatures`, `vehicles`, `props`…), not `characters` literally.
+Substitute `<POSE PHRASE>` with the mesh pose the user asked for, copied from `vocabulary/poses.json` — A-pose by default, T-pose when the user requests it (e.g. T-pose → *"standing in a symmetrical T-pose with both arms extended straight out horizontally to the sides at shoulder height, palms down, legs shoulder-width apart"*). Use the ingested subject's real `<subject-type>` in the output path (`characters`, `creatures`, `vehicles`, `props`…), not `characters` literally.
 
 `--reference-image` biases the render toward the source subject; the prompt overrides the pose to the chosen mesh pose and the expression to neutral. This is the canonical "illustration → mesh-ready" path.
 

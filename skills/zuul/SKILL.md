@@ -28,7 +28,7 @@ Then set a provider key in `.env` (CWD) or `~/.claude/.env` — `GOOGLE_API_KEY`
 
 ## Always read first
 
-**Before writing any prompt:** read `core/render-rules.md`. It contains the locked Base Prompt Prefix that MUST be prepended verbatim to every generation prompt.
+**Before writing any prompt:** read `core/render-rules.md` for the universal render rules, and pick a **style (core prompt)** from `vocabulary/styles.json` — the default `clean-mesh-gen` unless the user wants another. The chosen style's `prompt` is prepended verbatim to every generation prompt, with the `<FRAMING>` slot filled in. (`mesh_safe: false` styles relax the mesh-gen rules and pair with observed poses.)
 
 Then read the matching `subjects/` file for framing and pose vocabulary.
 
@@ -45,8 +45,9 @@ Typical question sequence:
 2. Genre — pick a top-level genre from `vocabulary/genre.json` (Fantasy, Horror, Sci-Fi, Modern, Science Fantasy, Historical, Western)
 3. Sub-genre — pick a sub-genre of that genre from `vocabulary/subgenres.json`
 4. Specific identity (name, role, species) — look up species in `vocabulary/species.json`; pick a role by filtering `vocabulary/roles.json` on the chosen genre/sub-genre (see `subjects/characters.md`). **If no role fits, create one and save it to the pool** (see `subjects/characters.md` → "Creating a new role"). Check `vocabulary/intersections.json` for matching rules
-5. Pose — offer named poses from `core/pose-library.md`
-6. Model and size (default: nano-banana-2, 2K — only ask if user seems to care about quality/speed)
+5. Pose — offer poses from `vocabulary/poses.json`, filtered by the subject's body plan (from the species' `body_plan` field in `vocabulary/species.json`; the creature's shape — `quadruped`/`winged`/`floating` — otherwise). Prefer `mesh_safe` poses by default; offer `observed` poses only when the user wants a beauty/splash render. See `core/pose-library.md` for the schema.
+6. Style — default to the mesh-gen style (`clean-mesh-gen`) from `vocabulary/styles.json`; offer alternates only if the user wants a non-mesh look (cinematic, painterly, line-art…). `mesh_safe: false` styles pair with **observed** poses, not mesh-gen poses.
+7. Model and size (default: nano-banana-2, 2K — only ask if user seems to care about quality/speed)
 
 ### Output location
 
@@ -65,6 +66,8 @@ Store the seed in the prompt record. If the user clears it, omit `--seed` from t
 Every time a render is produced, create or update the subject's JSON file at:
 `<OUTPUT_DIR>/concepts/[subject-type]/[slug]/[slug].json`
 
+> The generator also writes a plain-text **prompt sidecar** next to every image it saves — `[slug]-NN.txt` containing only the exact prompt — so the user can read it or paste it straight into another LLM without digging through the JSON record.
+
 The outer object is the subject definition. `renders[]` is the array of generation records.
 
 Each render entry must include:
@@ -74,6 +77,7 @@ Each render entry must include:
   "file": "slug-NN.png",
   "type": "action | a-pose | t-pose | turnaround | ingest",
   "model": "nano-banana-2 | nano-banana-pro",
+  "style": "clean-mesh-gen | (any id from vocabulary/styles.json)",
   "size": "512px | 1K | 2K | 4K",
   "aspect_ratio": "2:3",
   "seed": 847392,

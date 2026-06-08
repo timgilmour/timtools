@@ -831,14 +831,18 @@ async function main(): Promise<void> {
       console.warn("Warning: --seed is not supported with OpenRouter provider, ignoring");
     }
 
-    const generate = (prompt: string, output: string): Promise<void> => {
+    const generate = async (prompt: string, output: string): Promise<void> => {
       if (provider === "openrouter") {
-        return generateWithOpenRouter(args.model, prompt, args.size, args.aspectRatio, output, args.referenceImage);
+        await generateWithOpenRouter(args.model, prompt, args.size, args.aspectRatio, output, args.referenceImage);
+      } else if (args.model === "nano-banana-pro") {
+        await generateWithNanoBananaPro(prompt, args.size, args.aspectRatio, output, args.referenceImage, geminiProvider, args.seed);
+      } else {
+        await generateWithNanoBanana2(prompt, args.size, args.aspectRatio, output, args.referenceImage, args.thinking, args.grounded, geminiProvider, args.seed);
       }
-      if (args.model === "nano-banana-pro") {
-        return generateWithNanoBananaPro(prompt, args.size, args.aspectRatio, output, args.referenceImage, geminiProvider, args.seed);
-      }
-      return generateWithNanoBanana2(prompt, args.size, args.aspectRatio, output, args.referenceImage, args.thinking, args.grounded, geminiProvider, args.seed);
+      // Write a plain-text prompt sidecar next to the image — copy-paste ready for any LLM.
+      const promptPath = output.replace(/\.(png|jpe?g|webp)$/i, "") + ".txt";
+      await writeFile(promptPath, prompt + "\n");
+      console.log(`Prompt saved to ${promptPath}`);
     };
 
     // Handle creative variations mode

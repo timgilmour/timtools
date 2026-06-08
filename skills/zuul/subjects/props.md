@@ -7,7 +7,7 @@ Like vehicles, props are *viewed*, not posed — pick a camera angle that reveal
 ## Prompt assembly
 
 ```
-[<VIEW PHRASE> from the view selector] + [render block from core/render-rules.md]
+[<VIEW PHRASE> from the view selector] + [chosen style prompt from vocabulary/styles.json (default clean-mesh-gen)]
 Concept reference of <SUBJECT>, a single isolated object. <DETAILS: form, materials, wear, palette>.
 ```
 

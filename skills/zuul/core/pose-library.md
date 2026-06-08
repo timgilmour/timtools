@@ -1,49 +1,66 @@
 # Pose Library
 
-The canonical, **appendable** store of named poses for character/creature subjects. Two sections:
+Named poses for character/creature subjects live in the tagged pool
+**`vocabulary/poses.json`** — the canonical, appendable store. This file is the
+guide to that pool: what the fields mean, the hard rule for mesh gen, and how to
+add a pose (by text or by image ingest).
 
-- **Mesh-gen poses** — neutral, limbs-separated, for image-to-3D. Hand-curated, stable.
-- **Observed poses** — captured from reference images via `ingest-image.md`. Grows over time.
+## The pool: `vocabulary/poses.json`
 
-A pose entry drives two things in a prompt: the `<POSE>` phrase and the recommended aspect ratio.
+Each pose is an object:
 
-## Mesh-gen poses (for image-to-3D)
-
-| Pose | `<POSE>` phrase | Aspect | Use |
-|------|-----------------|--------|-----|
-| **A-pose** (default) | `standing in a symmetrical A-pose with arms relaxed straight down at roughly 45 degrees away from the torso, palms facing the body, fingers slightly spread, legs shoulder-width apart` | `2:3` | Bipeds; frames tall figures, natural read |
-| **T-pose** | `standing in a symmetrical T-pose with both arms extended straight out horizontally to the sides at shoulder height, palms down, fingers together, legs shoulder-width apart` | `1:1` | Maximum limb separation |
-| **Quadruped stand** | `standing square and symmetrical on all four legs, planted shoulder-width apart, head level` | `4:3` | Beasts, mounts, monsters |
-
-> **Hard requirement for mesh gen:** clear air gaps between arms and torso, and between the legs. Only these neutral poses are safe for reconstruction. Observed/action poses below are for **beauty/concept renders, not mesh gen.**
-
-## Observed poses (captured via ingest)
-
-Beauty/action poses derived from reference images. **Not for mesh gen** — limbs may overlap. Use for posed concept renders, splash art, or as a pose vocabulary reference.
-
-Entry format (append one block per captured pose):
-
-```
-### <pose-slug>
-- **phrase:** <imperative pose description, body + limbs + head + weight>
-- **expression:** <face/attitude, if any>
-- **aspect:** <recommended ratio>
-- **use:** beauty / action / idle / dramatic
-- **source:** <image filename or note>
+```json
+{
+  "id": "a-pose",
+  "label": "A-pose",
+  "category": "mesh-gen",          // "mesh-gen" | "observed"
+  "mesh_safe": true,               // safe for single-image image-to-3D?
+  "applies_to": ["biped"],         // body plans: biped | quadruped | winged | floating | "*"
+  "phrase": "standing in a symmetrical A-pose ...",   // the <POSE> phrase
+  "aspect": "2:3",                 // recommended aspect ratio
+  "default": true,                 // optional — the default pick for its body plan
+  "expression": "...",             // optional — observed poses only
+  "use": "mesh-gen",               // mesh-gen | action | beauty | idle | dramatic
+  "source": "hand-curated",        // or the ingested image filename
+  "ext": {}
+}
 ```
 
-<!-- INGEST APPENDS BELOW THIS LINE -->
+**Two categories:**
 
-### enraged-roar
-- **phrase:** standing wide with weight low, torso leaning forward, both arms raised and bent outward with fists clenched, shoulders hunched, head tilted back mid-roar, mouth wide open
-- **expression:** screaming, enraged, furious
-- **aspect:** 2:3
-- **use:** action / dramatic
-- **source:** example entry (illustrates the format)
+- **`mesh-gen`** (`mesh_safe: true`) — neutral, limbs-separated, for image-to-3D.
+  Hand-curated and stable: `a-pose` (default biped), `t-pose`, `quadruped-stand`,
+  `winged-spread`, `floating-idle`.
+- **`observed`** (`mesh_safe: false`) — beauty/action poses captured from reference
+  images via `core/ingest-image.md`. Limbs may overlap — **not for mesh gen.**
 
-## Adding a pose
+**Selecting a pose:** filter the pool by the subject's body plan — include every
+pose whose `applies_to` contains the subject's body plan (or `"*"`). A humanoid
+character is `biped`; use the creature's shape for non-humanoids. Prefer
+`mesh_safe` poses by default; offer `observed` poses only for beauty/splash renders.
 
-1. Run the `ingest-image.md` workflow on a reference image.
-2. It derives a pose block in the format above.
-3. Append it under the INGEST line. Give it a short, descriptive `pose-slug` (verb-first: `enraged-roar`, `guard-stance`, `casting-spell`).
-4. Reuse it later by name: *"render the orc in the `enraged-roar` pose."*
+## Hard requirement for mesh gen
+
+Clear air gaps between arms and torso, and between the legs (and wings held clear
+of the body). Only `mesh_safe` poses satisfy this — A-pose (natural, frames tall
+figures) and T-pose (maximum separation) for bipeds; the square stands for
+quadrupeds/winged/floating. Observed poses are for posed concept renders, splash
+art, or pose-vocabulary reference only.
+
+## Creating a new pose
+
+Two paths — both end with a validated object appended to `vocabulary/poses.json`:
+
+**A. From text** (no image needed):
+1. **Draft** the object: `id` (verb-first kebab — `guard-stance`, `casting-spell`),
+   `label`, `category`, `mesh_safe`, `applies_to` (body plans), `phrase`, `aspect`,
+   optional `expression`/`use`, `source` (`"hand-authored"`), `ext: {}`.
+2. **Confirm** the full drafted JSON with the user before writing.
+3. **Append** it to `vocabulary/poses.json` — no duplicate `id`.
+4. **Validate**: `bun run tools/validate-vocab.mjs` → `OK`.
+5. **Use** it by name in a render.
+
+**B. From a reference image:** run `core/ingest-image.md` — it derives a pose object
+(Output 2) which you confirm and append the same way (steps 2–5 above).
+
+Reuse any pose by name later: *"render the dwarf in the `enraged-roar` pose."*

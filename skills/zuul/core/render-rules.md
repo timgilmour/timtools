@@ -2,21 +2,34 @@
 
 These rules apply to **every** subject type — characters, creatures, vehicles, mechs, props. They produce a clean, isolated render that a single-image image-to-3D generator (Meshy, Tripo, Hunyuan3D, Rodin) can reconstruct cleanly. The subject-specific `subject-*.md` files supply the framing/pose vocabulary; this file supplies everything else.
 
-## Base Prompt Prefix (locked — prepend once)
+## Styles — the core prompt (pick one)
 
-Every prompt is **one** render block, prepended verbatim with the `<FRAMING>` slot filled in, followed by the subject's identity and description. The render language appears **exactly once, at the start** — do not paraphrase, abbreviate, or repeat it at the end.
+Every prompt starts with **one core prompt** — a *style* — prepended verbatim with the `<FRAMING>` slot filled in, followed by the subject's identity and description. The style language appears **exactly once, at the start** — do not paraphrase, abbreviate, or repeat it at the end.
+
+Styles live in the tagged pool **`vocabulary/styles.json`**. Each entry's `prompt` is a full core prompt. Pick one:
+
+- **Default:** the style flagged `default: true` — `clean-mesh-gen`, the flat / isolated / white-background render optimized for single-image image-to-3D. **Use it unless the user wants something else.**
+- **`mesh_safe: true`** styles obey the mesh-gen hard rules in this file (flat light, white bg, matte, orthographic, isolated). **`mesh_safe: false`** styles (cinematic, painterly, line-art, flat-vector, photoreal, …) deliberately relax them — pair these with **observed** poses, not mesh-gen poses.
 
 **Order of every prompt:**
 
 ```
-[render block, <FRAMING> filled in]  →  <SUBJECT identity + pose + description details>
+[chosen style prompt, <FRAMING> filled in]  →  <SUBJECT identity + pose + description details>
 ```
 
-**The render block** (copy verbatim; replace only `<FRAMING>`):
+`<FRAMING>` is the **camera view** phrase from the matching subject module — e.g. characters: `Front-facing orthographic`; vehicles: `Three-quarter front`. It is distinct from `<POSE>` (the body's pose, e.g. A-pose), which goes in the subject description. After the style block, append the subject's identity, pose, gear, and palette.
 
-> Clean game concept art style, crisp readable silhouette, clear forms. <FRAMING> view, entire subject in frame, centered with empty margin on all sides. No perspective distortion, no foreshortening, neutral eye-level camera. Flat even diffuse studio lighting, soft and shadowless, no rim light, no cast shadows. Matte surfaces, no reflections, no glossy or wet highlights. Pure white seamless background, single subject fully isolated. Still, sharp focus, high detail.
+### Creating a new style
 
-`<FRAMING>` is the **camera view** phrase from the matching subject module — e.g. characters: `Front-facing orthographic`; vehicles: `Three-quarter front`. It is distinct from `<POSE>` (the body's pose, e.g. A-pose), which goes in the subject description. After the block, append the subject's identity, pose, gear, and palette.
+Same draft → confirm → append → validate → use flow as the other pools:
+
+1. **Draft** the object: `id` (kebab), `taxonomy: "style"`, `label`, `description`, `mesh_safe` (true **only** if it keeps flat light / white bg / matte / orthographic / isolated), `uses_framing` (true if the `prompt` contains a `<FRAMING>` slot), `prompt` (the full core prompt), `source: "hand-authored"`, `ext: {}`. Do **not** set `default` — there is exactly one default.
+2. **Confirm** the full JSON with the user.
+3. **Append** to `vocabulary/styles.json` — no duplicate `id`.
+4. **Validate**: `bun run tools/validate-vocab.mjs` → `OK`.
+5. **Use** it as the core prompt for the render.
+
+> The rules below (do/don't, materials, background, aspect) are written for **`mesh_safe`** styles — the image-to-3D path. Beauty styles (`mesh_safe: false`) relax the lighting / background / material constraints by design; keep the framing and aspect-ratio guidance.
 
 ## Do / don't (applies to all subjects)
 

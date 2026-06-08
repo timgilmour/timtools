@@ -7,7 +7,7 @@ Unlike characters (which pose), vehicles are *viewed* — the camera angle is th
 ## Prompt assembly
 
 ```
-[<VIEW PHRASE> from the view selector] + [render block from core/render-rules.md]
+[<VIEW PHRASE> from the view selector] + [chosen style prompt from vocabulary/styles.json (default clean-mesh-gen)]
 Concept reference of <SUBJECT>, <SCALE CONTEXT>. <DETAILS: hull, propulsion, features, wear, palette>.
 ```
 

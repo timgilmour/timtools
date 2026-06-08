@@ -27,7 +27,7 @@ These species have entries in `vocabulary/species.json`:
 #### Creating a new species (the pool grows as you use it)
 
 If the user wants a species not in the pool, **create it** — same flow as roles:
-1. **Draft** the entry: `id`, `taxonomy: "species"`, `label`, `default_size`, `visual` (skin / features / build / palette), `traits`, `prompt_fragments` (2–5 concrete phrases), `applies_to` (genre/sub-genre ids or `"*"`), `ext: {}`.
+1. **Draft** the entry: `id`, `taxonomy: "species"`, `label`, `default_size`, `body_plan` (`biped` | `quadruped` | `winged` | `floating` — drives pose filtering), `visual` (skin / features / build / palette), `traits`, `prompt_fragments` (2–5 concrete phrases), `applies_to` (genre/sub-genre ids or `"*"`), `ext: {}`.
 2. **Confirm** the full drafted JSON with the user.
 3. **Append** it to `vocabulary/species.json` — no duplicate `id`.
 4. **Validate**: `bun run tools/validate-vocab.mjs` → `OK`.
@@ -71,7 +71,7 @@ When you hand-tune a phrase worth keeping, save it as a **slot-tagged fragment**
 ## Prompt assembly
 
 ```
-[render block from core/render-rules.md, <FRAMING> = "Front-facing orthographic"]
+[chosen style prompt from vocabulary/styles.json (default clean-mesh-gen), <FRAMING> = "Front-facing orthographic"]
 Full-body <character/creature> concept reference of <SUBJECT>, <POSE>. <DETAILS: assembled prompt_fragments + any custom additions>.
 ```
 
@@ -83,12 +83,12 @@ Full-body <character/creature> concept reference of <SUBJECT>, <POSE>. <DETAILS:
 
 ## Pose selector
 
-Poses live in **`core/pose-library.md`** (the appendable store). Pick a `<POSE>` phrase and aspect from there:
+Poses live in the tagged pool **`vocabulary/poses.json`** (see `core/pose-library.md` for the schema and authoring flow). Filter the pool by the subject's **body plan** — include every pose whose `applies_to` contains the subject's body plan (or `"*"`). The body plan comes from the species' `body_plan` field in `vocabulary/species.json`; for creatures without a species entry, use their shape (`quadruped` | `winged` | `floating`). Take the chosen pose's `phrase` for `<POSE>` and its `aspect` for `--aspect-ratio`.
 
-- **Mesh-gen poses** (A-pose / T-pose / quadruped stand) — neutral, limbs separated, safe for image-to-3D. **Use these by default.**
-- **Observed poses** — captured from reference images via `core/ingest-image.md`. For beauty/action renders, **not** mesh gen.
+- **Mesh-gen poses** (`mesh_safe: true` — A-pose / T-pose / quadruped-stand / winged-spread / floating-idle) — neutral, limbs separated, safe for image-to-3D. **Use these by default.**
+- **Observed poses** (`mesh_safe: false` — e.g. `enraged-roar`) — captured from reference images via `core/ingest-image.md`. For beauty/action renders, **not** mesh gen.
 
-**The only hard requirement for mesh gen:** clear air gaps between arms and torso, and between the legs — satisfied by A-pose (natural, frames tall figures) and T-pose (maximum separation). New poses are added by ingesting reference images; see `core/ingest-image.md`.
+**The only hard requirement for mesh gen:** clear air gaps between arms and torso, and between the legs (and wings held clear) — satisfied by the `mesh_safe` poses. New poses are added by text or image ingest; see `core/pose-library.md` → "Creating a new pose".
 
 ## Worked example — taxonomy-assembled
 

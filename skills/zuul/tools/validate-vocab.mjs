@@ -38,6 +38,10 @@ const checkFragments = (label, frags) => {
   }
 };
 
+// Body plans — used by species (body_plan: single value) and poses (applies_to[]).
+const BODY_PLANS = ["biped", "quadruped", "winged", "floating"];
+const SPECIES_PLANS = new Set(BODY_PLANS);
+
 const genres = await load("genre.json");
 const subs = await load("subgenres.json");
 const roles = await load("roles.json");
@@ -98,13 +102,58 @@ for (const file of ["species.json", "vehicles.json", "props.json"]) {
     for (const t of x.applies_to || []) if (!validTags.has(t)) E(`${file}: ${x.id} bad tag "${t}"`);
     if (!Array.isArray(x.prompt_fragments) || !x.prompt_fragments.length) E(`${file}: ${x.id} empty prompt_fragments`);
     else checkFragments(`${file}:${x.id}`, x.prompt_fragments);
+    if (file === "species.json" && !SPECIES_PLANS.has(x.body_plan)) E(`species ${x.id}: bad or missing body_plan "${x.body_plan}"`);
   }
   poolCounts[file] = pool.length;
 }
+
+// Poses pool: body-plan-tagged, category mesh-gen | observed
+const POSE_PLANS = new Set([...BODY_PLANS, "*"]);
+const POSE_CATEGORIES = new Set(["mesh-gen", "observed"]);
+let poses = [];
+try { poses = await load("poses.json"); } catch { E("poses.json missing or invalid JSON"); }
+if (!Array.isArray(poses)) { E("poses.json is not an array"); poses = []; }
+const poseIds = new Set();
+for (const p of poses) {
+  if (poseIds.has(p.id)) E(`pose ${p.id}: duplicate id`);
+  poseIds.add(p.id);
+  if (!p.label) E(`pose ${p.id}: missing label`);
+  if (!POSE_CATEGORIES.has(p.category)) E(`pose ${p.id}: bad category "${p.category}"`);
+  if (typeof p.mesh_safe !== "boolean") E(`pose ${p.id}: mesh_safe must be boolean`);
+  if (!Array.isArray(p.applies_to) || !p.applies_to.length) E(`pose ${p.id}: empty applies_to`);
+  for (const t of p.applies_to || []) if (!POSE_PLANS.has(t)) E(`pose ${p.id}: bad body-plan tag "${t}"`);
+  if (typeof p.phrase !== "string" || !p.phrase.trim()) E(`pose ${p.id}: missing phrase`);
+  if (typeof p.aspect !== "string" || !p.aspect.trim()) E(`pose ${p.id}: missing aspect`);
+  if (p.category === "mesh-gen" && p.mesh_safe !== true) E(`pose ${p.id}: mesh-gen pose must be mesh_safe:true`);
+}
+// Coverage: every body plan must have at least one mesh-safe pose
+for (const plan of ["biped", "quadruped", "winged", "floating"]) {
+  if (!poses.some((p) => p.mesh_safe && p.applies_to.includes(plan)))
+    E(`no mesh-safe pose for body plan "${plan}"`);
+}
+
+// Styles pool: each entry is a full core prompt; exactly one default
+let styles = [];
+try { styles = await load("styles.json"); } catch { E("styles.json missing or invalid JSON"); }
+if (!Array.isArray(styles)) { E("styles.json is not an array"); styles = []; }
+const styleIds = new Set();
+let defaultStyles = 0;
+for (const st of styles) {
+  if (styleIds.has(st.id)) E(`style ${st.id}: duplicate id`);
+  styleIds.add(st.id);
+  if (!st.label) E(`style ${st.id}: missing label`);
+  if (typeof st.mesh_safe !== "boolean") E(`style ${st.id}: mesh_safe must be boolean`);
+  if (typeof st.uses_framing !== "boolean") E(`style ${st.id}: uses_framing must be boolean`);
+  if (typeof st.prompt !== "string" || !st.prompt.trim()) E(`style ${st.id}: missing prompt`);
+  if (st.uses_framing && typeof st.prompt === "string" && !st.prompt.includes("<FRAMING>"))
+    E(`style ${st.id}: uses_framing is true but prompt has no <FRAMING> slot`);
+  if (st.default === true) defaultStyles++;
+}
+if (styles.length && defaultStyles !== 1) E(`styles.json must have exactly one default:true (found ${defaultStyles})`);
 
 if (errors.length) {
   console.error(`FAIL — ${errors.length} problem(s):`);
   for (const m of errors) console.error("  - " + m);
   process.exit(1);
 }
-console.log(`OK — ${genres.length} genres, ${subs.length} sub-genres, ${roles.length} roles, ${poolCounts["species.json"]||0} species, ${poolCounts["vehicles.json"]||0} vehicles, ${poolCounts["props.json"]||0} props; all nodes resolve roles.`);
+console.log(`OK — ${genres.length} genres, ${subs.length} sub-genres, ${roles.length} roles, ${poolCounts["species.json"]||0} species, ${poolCounts["vehicles.json"]||0} vehicles, ${poolCounts["props.json"]||0} props, ${poses.length} poses, ${styles.length} styles; all nodes resolve roles, all body plans have a mesh-safe pose, exactly one default style.`);
