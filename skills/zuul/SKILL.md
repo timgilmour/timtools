@@ -32,7 +32,7 @@ Then set a provider key in `.env` (CWD) or `~/.claude/.env` — `GOOGLE_API_KEY`
 
 Then read the matching `subjects/` file for framing and pose vocabulary.
 
-For character/creature subjects: look up species, genre/sub-genre, role, and descriptors in the structured `vocabulary/` JSON files (`species.json`, `genre.json` + `subgenres.json`, the tagged `roles.json` pool, `descriptors.json`, `intersections.json`) to assemble the `<DETAILS>` slot from authoritative `prompt_fragments[]` arrays. See `subjects/characters.md` for the full lookup sequence.
+For character/creature subjects: look up species, genre/sub-genre, role, and descriptors in the structured `vocabulary/` JSON files (`species.json`, `genre.json` + `subgenres.json`, the tagged `roles.json` pool, `descriptors.json`, `intersections.json`) to assemble the `<DETAILS>` slot from authoritative `prompt_fragments[]` arrays. See `subjects/characters.md` for the full lookup sequence, and **`core/assembly.md` for the slot model and merge rules** that resolve those fragments into a coherent `<DETAILS>` without contradictions.
 
 Then reference the prose `vocabulary/` markdown files as needed for theme, material, environment, and palette language.
 

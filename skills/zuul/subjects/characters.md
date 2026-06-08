@@ -14,7 +14,7 @@ For any subject with vocabulary coverage, look up their tags before building the
 4. **Descriptors** → `vocabulary/descriptors.json` — for each tag applied (size, age, condition, tier, physical, social), extract `prompt_fragments[]`
 5. **Intersections** → `vocabulary/intersections.json` — check every entry's `when[]`. If ALL conditions match the subject's tags (species + role + descriptors), apply `visual_override`, `traits_add`, `prompt_fragments_add[]`. Multiple intersections can fire; collect all additions.
 
-Merge all extracted fragments into the `<DETAILS>` slot of the prompt assembly template. Intersection fragments take priority — they represent emergent archetypes, not just additive detail.
+**Do not naively concatenate the fragments** — that produces contradictory prompts (e.g. a role's `minimal hide armour` colliding with a sub-genre's `gleaming enchanted armour`). Resolve them into the `<DETAILS>` slot using the slot model in `core/assembly.md`: classify each fragment into a slot, compose compatible fragments, and resolve contradictions by ownership/precedence (intersection fragments rank highest among taxonomy sources; genre/sub-genre fragments that collide with a role- or species-owned slot are demoted). When two same-precedence sources contradict in one slot, **ask the user**. See `core/assembly.md` for the full procedure, the slot/owner table, and a worked example.
 
 For theme, material, environment, and palette language, reference the prose vocabulary files (`vocabulary/*.md`) in the same directory.
 
@@ -56,6 +56,17 @@ If the user wants an archetype the pool doesn't cover, **create it** — don't f
 5. **Use** it for the render like any other role.
 
 > Note: roles in the era-divided genres (Historical; Modern's WWI/WWII) are tagged at the **sub-genre** level, so the genre-id part of the lookup filter intentionally matches nothing for them — the sub-genre id and `"*"` carry the result. That is expected, not a bug.
+
+#### Creating a new fragment (slot-tagged, user-authored)
+
+When you hand-tune a phrase worth keeping, save it as a **slot-tagged fragment** so future assemblies place it unambiguously (slots are defined in `core/assembly.md`):
+
+1. **Draft** the fragment as an object: `{ "slot": "<a slot id from core/assembly.md>", "text": "<concrete visual phrase>" }` — matte/mesh-friendly, in the style of existing fragments.
+2. **Attach** it to the taxonomy node it belongs to — append to that node's `prompt_fragments` array in the matching `vocabulary/*.json` (a role in `roles.json`, a species in `species.json`, a sub-genre in `subgenres.json`, etc.). The node's `applies_to`/`genres` tags govern when it surfaces. If no node fits, create the role or species first (above), then add the fragment.
+3. **Confirm** the draft with the user — show the JSON object and which node/file it lands in — before writing.
+4. **Append** — add the object to the array; do not duplicate existing text. Legacy bare-string fragments may stay as strings; new ones should be `{slot, text}` objects.
+5. **Validate** — run `bun run tools/validate-vocab.mjs` and confirm it prints `OK` (it checks every fragment is a string or a `{slot,text}` object with a known slot).
+6. **Use** it like any other fragment; at assembly its `slot` is read from the field, no classification needed.
 
 ## Prompt assembly
 

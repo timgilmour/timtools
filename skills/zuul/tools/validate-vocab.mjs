@@ -21,6 +21,23 @@ const EXPECTED_SUBS = {
 const errors = [];
 const E = (m) => errors.push(m);
 
+// A prompt_fragments[] entry is a bare string (legacy) or a {slot,text} object.
+const SLOTS = new Set([
+  "art_style", "tone",
+  "build", "features", "surface", "armor_clothing", "gear", "weapon",
+  "materials", "palette", "marks", "aura", "bearing", "expression",
+]);
+const checkFragments = (label, frags) => {
+  for (const f of frags) {
+    if (typeof f === "string") continue;
+    if (f && typeof f === "object" && typeof f.slot === "string" && typeof f.text === "string") {
+      if (!SLOTS.has(f.slot)) E(`${label}: fragment has unknown slot "${f.slot}"`);
+      continue;
+    }
+    E(`${label}: fragment must be a string or a {slot,text} object`);
+  }
+};
+
 const genres = await load("genre.json");
 const subs = await load("subgenres.json");
 const roles = await load("roles.json");
@@ -44,6 +61,7 @@ for (const s of subs) {
   if (!s.tone) E(`subgenre ${s.id} missing tone`);
   if (!Array.isArray(s.descriptors) || !s.descriptors.length) E(`subgenre ${s.id} empty descriptors`);
   if (!Array.isArray(s.prompt_fragments) || !s.prompt_fragments.length) E(`subgenre ${s.id} empty prompt_fragments`);
+  else checkFragments(`subgenre ${s.id}`, s.prompt_fragments);
 }
 
 // Roles
@@ -56,6 +74,7 @@ for (const r of roles) {
   if (!Array.isArray(r.applies_to) || !r.applies_to.length) E(`role ${r.id} empty applies_to`);
   for (const t of r.applies_to || []) if (!validTags.has(t)) E(`role ${r.id} bad tag "${t}"`);
   if (!Array.isArray(r.prompt_fragments) || !r.prompt_fragments.length) E(`role ${r.id} empty prompt_fragments`);
+  else checkFragments(`role ${r.id}`, r.prompt_fragments);
 }
 
 // Lookup coverage: every genre and sub-genre must yield >=1 role
@@ -78,6 +97,7 @@ for (const file of ["species.json", "vehicles.json", "props.json"]) {
     if (!Array.isArray(x.applies_to) || !x.applies_to.length) E(`${file}: ${x.id} empty applies_to`);
     for (const t of x.applies_to || []) if (!validTags.has(t)) E(`${file}: ${x.id} bad tag "${t}"`);
     if (!Array.isArray(x.prompt_fragments) || !x.prompt_fragments.length) E(`${file}: ${x.id} empty prompt_fragments`);
+    else checkFragments(`${file}:${x.id}`, x.prompt_fragments);
   }
   poolCounts[file] = pool.length;
 }
