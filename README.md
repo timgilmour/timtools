@@ -17,7 +17,9 @@ timtools/
 ├── skills/
 │   ├── camoufox-browser/    # Anti-detect Firefox + Playwright automation
 │   ├── ecs-architect/       # ECS game architecture suite (design, implement, review)
-│   └── scaffold-project/    # Full-stack project scaffolding wizard
+│   ├── scaffold-project/    # Full-stack project scaffolding wizard
+│   ├── win2lin/             # Windows → Linux Claude Code migration (prepare/ingest/doctor)
+│   └── zuul/                # Concept-art renders tuned for image-to-3D — the Gatekeeper
 ├── plugins/                 # Plugin manifests and configs
 ├── templates/               # Reusable templates
 └── shared/                  # Shared resources and snippets
@@ -79,6 +81,36 @@ The workflow is install → verify → use. The `scripts/install.sh` handles Deb
 | Linux    | Xvfb supported for `headless="virtual"` on headless servers |
 | macOS    | Native run; no virtual display needed                        |
 | Windows  | Native run; no virtual display needed                        |
+
+---
+
+### win2lin
+
+**A three-phase migration that moves a whole Claude Code environment — selected projects, in-repo config, the referenced subset of `~/.claude/`, and an optional encrypted secrets vault — from Windows to a fresh Linux box (Ubuntu/Debian/Arch, bare metal or WSL2, x86_64 or aarch64).**
+
+Moving machines usually means re-cloning repos by hand and then spending a day fixing everything Claude Code remembered about the old box: Windows paths baked into `~/.claude.json`, `.mcp.json`, and settings; per-project memory stranded under the old home directory; MCP servers pointing at `C:\` paths. `win2lin` runs the whole move as a guided, auditable pipeline, with secrets handled safely out-of-band.
+
+It runs in three platform-detected modes. **`prepare`** (on Windows) discovers your projects, asks per-repo policy questions, and shells out to a PowerShell bundler that produces a single tarball plus a sibling `unpack-and-bootstrap.sh`. **`ingest`** (on Linux, after unpacking) confirms the detected distro/WSL/arch, asks where each project should land, rewrites every Windows path in your Claude config, restores projects per their captured policy, and lays down the referenced subset of `~/.claude/`. **`doctor`** is an idempotent post-check you can re-run any time to verify the result.
+
+Secrets stay sealed by design: the skill never reads `.env*` files and never sees the vault passphrase — the bundler collects env files under consent into an OpenSSL-encrypted vault, and you restore them with a one-liner the skill prints but never runs. Reference docs cover the bundle format, path-rewrite rules, and per-distro install one-liners.
+
+**Usage:** trigger by saying you're moving from Windows to Linux and want Claude Code, your projects, and your per-project memory to come along — the skill auto-detects which mode to run from your platform.
+
+---
+
+### zuul
+
+**Clean, isolated concept-art renders of fictional subjects — characters, creatures, vehicles, mechs, props — tuned for single-image image-to-3D mesh generators (Meshy, Tripo, Hunyuan3D, Rodin) and cinematic pre-production.** *"There is no `/art`. There is only Zuul."* — Zuul is the Gatekeeper to concept art.
+
+Image-to-3D tools reconstruct geometry from one picture, and they choke on exactly the things that make an illustration look good: dramatic lighting bakes shadows into the mesh, glossy speculars warp surfaces, foreshortening and dynamic poses fuse limbs. `zuul` encodes the opposite discipline as a locked, prepend-once render block — flat even shadowless lighting, matte surfaces, neutral eye-level camera, a single subject isolated on pure white and centered with margin — so what comes back is clean enough to reconstruct. A guided, one-question-at-a-time workflow walks from subject type through genre, sub-genre, identity, and pose, presents a reproducible seed, and records every generation (full prompt, model, size, seed, flags) to a per-subject JSON plus a catalog index.
+
+The vocabulary is the heart of it: a two-level taxonomy of **7 genres × 35 sub-genres** (Fantasy, Horror, Sci-Fi, Modern, Science Fantasy, Historical, Western — each with sub-genres like Dark Fantasy, Cyberpunk, WWII, Steampunk, Samurai, Weird West), plus a single **tag-driven pool for every reusable building block** — roles, species, vehicles, props — where each entry declares the genres/sub-genres it fits via an `applies_to` tag (a genre id, a sub-genre id, or `"*"` for universal). The pools **grow as you use them**: when you want an archetype the pool doesn't have, the skill drafts it, confirms it with you, and persists it back for next time. An image-ingest workflow re-renders a reference picture into a clean, mesh-ready T- or A-pose while keeping the subject.
+
+The generator is a Bun CLI (`tools/generate-image.ts`) wrapping Google's Nano Banana 2 / Nano Banana Pro image models, with provider auto-detection across the Gemini API, Vertex AI, and OpenRouter. Flags cover resolution (512px–4K), aspect ratio, transparent-background output for mesh tools that accept PNGA, extended thinking for complex compositions, web-search grounding, and best-effort deterministic seeds. A bundled `validate-vocab.mjs` keeps the vocabulary self-consistent (valid tags, unique ids, every node resolves to at least one role).
+
+**Usage:** trigger by asking for concept art of a fictional subject (character, creature, vehicle, mech, prop), a render for Meshy / Tripo / Hunyuan3D / Rodin or any image-to-3D pipeline, a T-pose / turnaround / character sheet, or by handing Zuul a reference image to describe, re-render, or ingest.
+
+**Setup:** `cd skills/zuul/tools && bun install`, then set a provider key (`GOOGLE_API_KEY`, Vertex, or `OPENROUTER_KEY`) in `.env` or `~/.claude/.env`.
 
 ---
 
