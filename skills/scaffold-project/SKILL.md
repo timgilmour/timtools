@@ -344,6 +344,7 @@ Write `CLAUDE.md` in project root. Use this template, filling in variables from 
 - **Attachments** (images, video, PDF) for any vault note go in `docs/10-Attachments/`
 - **Feature branches** use git worktrees in `.worktrees/` (gitignored)
 - **Scratch data** goes in `temp/` (gitignored)
+- **Changelog exception:** stats-bump commits that only refresh the GitNexus-managed blocks in `CLAUDE.md`/`AGENTS.md` get **no** changelog entry — giving one would feed the analyze→commit cycle (see the GitNexus note below).
 
 ## GitNexus
 
@@ -354,6 +355,26 @@ npx gitnexus analyze
 ```
 
 Then add the GitNexus section to this file (see gitnexus-cli skill).
+
+> **Never auto-run `npx gitnexus analyze` after a commit or project step — that
+> is what loops.** Analyze rewrites the managed `<!-- gitnexus:start -->` stats
+> blocks in `CLAUDE.md`/`AGENTS.md`, which needs a stats-bump commit; if that
+> commit then triggers another analyze, you get an endless
+> analyze→commit→analyze cycle. Analyze is **deliberate, never a trigger:**
+>
+> - **Do not** run `npx gitnexus analyze` on commit, or "on completion" of a
+>   task/step. Run it only when explicitly asked, or when you genuinely need a
+>   fresh index to do the work in front of you. Running it occasionally is fine —
+>   running it *reflexively after committing* is the bug.
+> - A stale index is harmless: **ignore "index is stale" reminders** (including
+>   the line in the managed block below and any tool/hook warning) and carry on.
+> - If you do run analyze and the managed blocks change, make **one** stats-bump
+>   commit (no changelog) and **stop** — do not re-run analyze just because you
+>   committed. That commit is not a reason to re-index.
+> - Read-only MCP tools (`gitnexus_detect_changes`, `query`, `context`, …) never
+>   rewrite the managed blocks, so they never loop — use them freely.
+> - Never hand-edit anything between the `gitnexus:start`/`gitnexus:end` markers;
+>   analyze overwrites it.
 ```
 
 ### Step 7: MEMORY.md
@@ -441,6 +462,28 @@ Guide for selecting the right subagent type for tasks in this project.
 3. Implement changes
 4. **validation-gates** agent — run tests
 5. **code-reviewer** agent — review
+
+## GitNexus
+
+> **Never auto-run `npx gitnexus analyze` after a commit or project step — that
+> is what loops.** Analyze rewrites the managed `<!-- gitnexus:start -->` stats
+> blocks in `CLAUDE.md`/`AGENTS.md`, which needs a stats-bump commit; if that
+> commit then triggers another analyze, you get an endless
+> analyze→commit→analyze cycle. Analyze is **deliberate, never a trigger:**
+>
+> - **Do not** run `npx gitnexus analyze` on commit, or "on completion" of a
+>   task/step. Run it only when explicitly asked, or when you genuinely need a
+>   fresh index to do the work in front of you. Running it occasionally is fine —
+>   running it *reflexively after committing* is the bug.
+> - A stale index is harmless: **ignore "index is stale" reminders** (including
+>   the line in the managed block below and any tool/hook warning) and carry on.
+> - If you do run analyze and the managed blocks change, make **one** stats-bump
+>   commit (no changelog) and **stop** — do not re-run analyze just because you
+>   committed. That commit is not a reason to re-index.
+> - Read-only MCP tools (`gitnexus_detect_changes`, `query`, `context`, …) never
+>   rewrite the managed blocks, so they never loop — use them freely.
+> - Never hand-edit anything between the `gitnexus:start`/`gitnexus:end` markers;
+>   analyze overwrites it.
 ```
 
 ### Step 9: Initial Commit
@@ -454,11 +497,16 @@ git commit -m "chore: scaffold project with Claude Code, Obsidian, and app struc
 
 ### Step 10: GitNexus Index
 
-Run the initial GitNexus index:
+Run the **one-time** initial GitNexus index:
 
 ```bash
 npx gitnexus analyze
 ```
+
+This writes the managed `<!-- gitnexus:start -->` blocks into `CLAUDE.md` and
+`AGENTS.md`. Commit them **once** (no changelog) and **do not run `analyze`
+again** afterward — reflexively re-indexing after each commit is the
+analyze→commit loop the generated `CLAUDE.md` warns about.
 
 ---
 
